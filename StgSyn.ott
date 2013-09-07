@@ -16,10 +16,10 @@ embed {{ tex-preamble
 %%  Metavariables  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-metavar f, x, y ::=   {{ com Variable names }}
+metavar f, x, y, z ::=   {{ com Variable names }}
 metavar K ::=   {{ com Data constructor names }}
 
-indexvar i, j, n ::= {{ com Indices to be used in lists }}
+indexvar i, j, k, n ::= {{ com Indices to be used in lists }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Syntax  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,19 +39,19 @@ cc {{ tex \textsf{cc} }} :: 'CostCentre_' ::=
 ccs {{ tex \textsf{ccs} }} :: 'CostCentreStack_' ::=
   {{ com Cost-centre stack, \coderef{profiling/CostCentre.lhs}{CostCentreStack} }}
 
-arg :: 'StgArg_' ::= {{ com Arguments, \coderef{stgSyn/StgSyn.lhs}{StgArg} }}
+a, b, c :: 'StgArg_' ::= {{ com Arguments, \coderef{stgSyn/StgSyn.lhs}{StgArg} }}
   | x   ::   :: StgVarArg {{ com Variable }}
   | lit ::   :: StgLitArg {{ com Literal }}
 
 args :: 'StgArgs_' ::= {{ com List of arguments }}
-  | </ argi // , // i /> :: :: List
+  | </ ai // , // i /> :: :: List
   | args args' :: :: Append
   | xs :: :: CastVariables
-  | [] :: :: EmptyList
+  | nil :: :: EmptyList
 
 xs :: 'Ids_' ::= {{ com List of variables }}
   | </ xi // , // i /> :: :: List
-  | [] :: :: EmptyList
+  | nil :: :: EmptyList
 
 e :: 'StgExpr_' ::= {{ com Expressions, \coderef{stgSyn/StgSyn.lhs}{StgExpr} }}
   | lit                                  ::   :: StgLit {{ com Literal }}
@@ -63,11 +63,11 @@ e :: 'StgExpr_' ::= {{ com Expressions, \coderef{stgSyn/StgSyn.lhs}{StgExpr} }}
   | lne binding in e                     ::   :: StgLetNoEscape  {{ com Let-no-escape binding }}
   | scc cc e                             ::   :: StgSCC {{ com Set cost-centre }}
   | ( e )                                :: M :: Parens {{ com Parenthesized expression }}
-%  | e' [ arg / x ]                       :: M :: Tsub
-%  | e' [ </ argxi // i IN 1 .. n /> ]    :: M :: Tsubs
+  | e' subst                             :: M :: Tsub
 
-argx :: 'argx_' ::=
-  | arg / x :: :: singleton
+subst :: 'Subst_' ::= {{ com List of substitutions }}
+  | [ a / x ]         ::   :: Mapping
+  | </ substi // i /> ::   :: List
 
 binding :: 'StgBind_' ::= {{ com Let-bindings, \coderef{stgSyn/StgSyn.lhs}{StgBind} }}
   | x = rhs                         ::   :: StgNonRec  {{ com Non-recursive binding }}
@@ -89,4 +89,4 @@ terminals :: 'terminals_' ::=
   | ->                  ::   :: arrow      {{ tex \rightarrow }}
   | |->                 ::   :: mapsto     {{ tex \mapsto }}
   | <>                  ::   :: union      {{ tex \mathbin{\mathaccent\cdot\cup} }}
-  | []                  ::   :: empty      {{ tex \cdot }}
+  | nil                 ::   :: empty      {{ tex \cdot }}

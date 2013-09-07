@@ -63,7 +63,7 @@ Cost-centres for profiling:
 
 Arguments in STG are restricted to be literals or variables:
 
-\gram{\ottarg}
+\gram{\otta}
 
 \subsection{Expressions}
 

@@ -5,12 +5,12 @@
 
 grammar
 
-c :: 'c_' ::=
+cost :: 'cost_' ::=
   | alloc K :: :: Allocate
 
 t {{ tex \theta }} :: 't_' ::=
   | {} :: :: empty
-  | { ccs |-> c } :: :: inject
+  | { ccs |-> cost } :: :: inject
   | t <> t' :: :: append
 
 G {{ tex \Gamma }}, D {{ tex \Delta }}, T {{ tex \Theta }} :: 'G_' ::=
@@ -27,57 +27,60 @@ formula :: 'formula_' ::=
   | x |-> rhs in G :: :: Gin
   | G' = G [ </ Gpi // , // i IN 1 .. n /> ] :: :: Gsplit
   | ccs' = enterFunCCS ccs ccs0 :: :: Gccs
+  | alt' = alt :: :: Galt
 
-z :: 'z_' ::=
+v :: 'v_' ::=
   | \ upd ccs xs . e    :: :: StgRhsClosureReentrant {{ com Restricted to re-entrant closures }}
   | K ccs args        :: :: StgRhsCon
 
 subrules
-  z <:: rhs
+  v <:: rhs
 
 defns
 
 Jcost :: '' ::=
 
 defn
-    ccs , G : e  >- t ->  D : arg , ccs' :: :: cost :: ''
-        {{tex [[ccs]] [[,]] [[G]] [[:]] [[e]]\ \Downarrow_{[[t]]}\ [[D]] [[:]] [[arg]] [[,]] [[ccs']] }}
+    ccs , G : e  >- t ->  D : a , ccs' :: :: cost :: ''
+        {{tex [[ccs]] [[,]] [[G]] [[:]] [[e]]\ \Downarrow_{[[t]]}\ [[D]] [[:]] [[a]] [[,]] [[ccs']] }}
         by
 
     --------------------------------------- :: StgLit
     ccs, G : lit  >-{}->  G : lit, ccs
 
-    G' = G [ x |-> z ]
+    G' = G [ x |-> v ]
     --------------------------------------- :: StgAppWhnf
-    ccs, G' : x []  >-t->  G' : x, ccs
+    ccs, G' : x nil  >-t->  G' : x, ccs
 
     ccs0, G' : e  >-t->  D' : y, ccs'
-    G' = G [ x |-> \ u ccs0 [] . e ]
-    D' = D [ x |-> \ r ccs0 [] . y [] ]
+    G' = G [ x |-> \ u ccs0 nil . e ]
+    D' = D [ x |-> \ r ccs0 nil . y nil ]
     --------------------------------------- :: StgAppThunk
-    ccs, G' : x []  >-t->  D' : y, ccs'
+    ccs, G' : x nil  >-t->  D' : y, ccs'
 
-    D = G [ x |-> \ r ccs0 xs1 . f args0 xs1 ]
+    D = G [ x |-> \ r ccs0 </ xj // j /> . f </ ai // i /> </ xj // j /> ]
     --------------------------------------- :: StgAppFunUnder
-    ccs, G : f args0 >- {} -> D : x, ccs
+    ccs, G : f </ ai // i /> >- {} -> D : x, ccs
     % NB: PAPs not charged!
 
     ccs1, G' : e >-t-> D : x, ccs'
     ccs1 = enterFunCCS ccs ccs0
-    G' = G [ f |-> \ r ccs0 xs . e ]
+    G' = G [ f |-> \ r ccs0 </ xi // i /> . e ]
     --------------------------------------- :: StgAppFunSat
-    ccs, G' : f args >-t->  D : x, ccs'
+    ccs, G' : f </ ai // i /> >-t->  D : x, ccs'
 
-    ccs, G : f args0 >-t-> D : f', ccs0
-    ccs, D : f' args1 >-t'-> T : x, ccs'
+    ccs, G : f </ ai // i /> >-t-> D : f', ccs0
+    ccs, D : f' </ bj // j /> >-t'-> T : x, ccs'
     ---------------------------------------- :: StgAppFunOver
-    ccs, G : f args >-t <> t'->  T : x, ccs'
+    ccs, G : f </ ai // i /> </ bj // j /> >-t <> t'->  T : x, ccs'
 
-    D = G [ x |-> K ccs args ]
+    D = G [ x |-> K ccs </ ai // i /> ]
     ---------------------------------------- :: StgConApp
-    ccs, G : K args  >- { ccs |-> alloc K } ->  D : x, ccs
+    ccs, G : K </ ai // i />  >- { ccs |-> alloc K } ->  D : x, ccs
 
-    ccs, D' : ek[]
-    ccs, G : e >- t -> D' : x, ccs0
+    D' = D [ x |-> Kk ccs0 </ ai // i /> ]
+    altj = Kk </ xi // i /> -> e'
+    ccs, G : e >- t -> D' : x, ccs0'
+    ccs, D' : e' </ [ ai / xi ] // i /> >- t' -> T : y, ccs'
     --------------------------------------------------------------- :: StgCase
-    ccs, G : case e as x of </ alti // | // i /> >- t <> t' -> T : z, ccs'
+    ccs, G : case e as x of </ altj // j /> >- t <> t' -> T : y, ccs'
