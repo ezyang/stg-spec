@@ -40,8 +40,8 @@ ccs {{ tex \textsf{ccs} }} :: 'CostCentreStack_' ::=
   | CCCS :: :: CurrentCCS {{ com Current cost-centre stack }}
     {{ tex \bullet }}
   | _    :: :: DontCareCCS {{ com Don't care cost-centre stack }}
-  | ccs ^ ccs' :: :: EnterFunCCS {{ com Function entry }}
-  | ccs # cc   :: :: PushCC {{ com Push a cost-centre }}
+  | ccs ^ ccs' :: :: EnterFunCCS {{ com Function entry, \coderef{rts/Profiling.c}{enterFunCCS} }}
+  | ccs # cc   :: :: PushCC {{ com Push a cost-centre, \coderef{rts/Profiling.c}{pushCostCentre} }}
   {{ com Cost-centre stack, \coderef{profiling/CostCentre.lhs}{CostCentreStack} }}
 
 a, b, c :: 'StgArg_' ::= {{ com Arguments, \coderef{stgSyn/StgSyn.lhs}{StgArg} }}
