@@ -5,8 +5,14 @@
 
 grammar
 
+heap :: 'Heap_' ::= {{ com Values on the heap }}
+  | cl                  :: :: HeapClosure
+  | K args              :: :: HeapConstructor
+  | x                   :: :: HeapIndirection
+
 cost :: 'cost_' ::=
-  | alloc K :: :: Allocate
+  | alloc K :: :: AllocateCon
+  | alloc cl :: :: AllocateClosure
 
 t {{ tex \theta }} :: 't_' ::=
   | {} :: :: empty
@@ -15,72 +21,97 @@ t {{ tex \theta }} :: 't_' ::=
 
 G {{ tex \Gamma }}, D {{ tex \Delta }}, T {{ tex \Theta }} :: 'G_' ::=
   | empty :: :: em
-  | G , Gp :: :: vn
+  | G [ Gp ] :: :: vn
 
 Gp :: 'Gp_' ::=
-  | x |-> rhs :: :: prod
+  | x |- ccs -> heap :: :: prod
+    {{ tex [[x]] \overset{[[ccs]]}{\mapsto} [[heap]] }}
 
 formula :: 'formula_' ::=
   | judgement :: :: judgement
   % all the random extra stuff we didn't want to gunk up the inductive
   % types with...
-  | x |-> rhs in G :: :: Gin
-  | G' = G [ </ Gpi // , // i IN 1 .. n /> ] :: :: Gsplit
-  | ccs' = enterFunCCS ccs ccs0 :: :: Gccs
   | alt' = alt :: :: Galt
+  | ccs' /= ccs :: :: Gccsneq
+  | Gp in G :: :: Gin
 
 v :: 'v_' ::=
-  | \ upd ccs xs . e    :: :: StgRhsClosureReentrant {{ com Restricted to re-entrant closures }}
-  | K ccs args        :: :: StgRhsCon
+  | cl                :: :: HClosureReentrant
+  | K args            :: :: HConstructor
+
+ret :: 'ret_' ::=
+  | a      :: :: Return
+  | { x args } :: :: LetNoEscape
 
 subrules
-  v <:: rhs
+  v <:: heap
 
 defns
 
 Jcost :: '' ::=
 
 defn
-    ccs , G : e  >- t ->  D : a , ccs' :: :: cost :: ''
-        {{tex [[ccs]] [[,]] [[G]] [[:]] [[e]]\ \Downarrow_{[[t]]}\ [[D]] [[:]] [[a]] [[,]] [[ccs']] }}
+    ccs , G : e  >- t ->  D : ret , ccs' :: :: cost :: ''
+        {{tex [[ccs]] [[,]] [[G]] [[:]] [[e]]\ \Downarrow_{[[t]]}\ [[D]] [[:]] [[ret]] [[,]] [[ccs']] }}
         by
 
     --------------------------------------- :: StgLit
     ccs, G : lit  >-{}->  G : lit, ccs
 
-    G' = G [ x |-> v ]
+    x |- ccs0 -> v in G
     --------------------------------------- :: StgAppWhnf
-    ccs, G' : x nil  >-t->  G' : x, ccs
+    ccs, G : x nil  >-{}->  G : x, ccs
 
-    ccs0, G' : e  >-t->  D' : y, ccs'
-    G' = G [ x |-> \ u ccs0 nil . e ]
-    D' = D [ x |-> \ r ccs0 nil . y nil ]
+    ccs0, G : e  >-t->  D : y, ccs'
     --------------------------------------- :: StgAppThunk
-    ccs, G' : x nil  >-t->  D' : y, ccs'
+    ccs, G [ x |- ccs0 -> \ u _ nil . e ] : x nil  >-t->  D [ x |- ccs0 -> y ] : y, ccs'
 
-    D = G [ x |-> \ r ccs0 </ xj // j /> . f </ ai // i /> </ xj // j /> ]
+    f |- ccs0 -> \ r ccs1 </ yi // i /> </ xj // j /> . e in G
     --------------------------------------- :: StgAppFunUnder
-    ccs, G : f </ ai // i /> >- {} -> D : x, ccs
+    ccs, G : f </ ai // i /> >- {} -> G [ x |- ccs -> \ r _ </ xj // j /> . f </ ai // i /> </ xj // j /> ] : x, ccs
     % NB: PAPs not charged!
 
-    ccs1, G' : e >-t-> D : x, ccs'
-    ccs1 = enterFunCCS ccs ccs0
-    G' = G [ f |-> \ r ccs0 </ xi // i /> . e ]
-    --------------------------------------- :: StgAppFunSat
-    ccs, G' : f </ ai // i /> >-t->  D : x, ccs'
+    ccs ^ ccs0, G : e >-t-> D : x, ccs'
+    ------------------------------------------------- :: StgAppFunSat
+    ccs, G [ f |- ccs0 -> \ r CCCS </ xi // i /> . e ] : f </ ai // i /> >-t->  D : x, ccs'
 
-    ccs, G : f </ ai // i /> >-t-> D : f', ccs0
-    ccs, D : f' </ bj // j /> >-t'-> T : x, ccs'
+    ccs, G : e >-t-> D : x, ccs'
+    ccs1 /= CCCS
+    ------------------------------------------------- :: StgAppTopLevelFunSat
+    ccs, G [ f |- _ -> \ r ccs1 </ xi // i /> . e ] : f </ ai // i /> >-t->  D : x, ccs'
+
+    ccs, G : f </ ai // i /> >-t-> D : f', ccs'
+    ccs, D : f' </ bj // j /> >-t'-> T : x, ccs''
     ---------------------------------------- :: StgAppFunOver
-    ccs, G : f </ ai // i /> </ bj // j /> >-t <> t'->  T : x, ccs'
+    ccs, G : f </ ai // i /> </ bj // j /> >-t <> t'->  T : x, ccs''
 
-    D = G [ x |-> K ccs </ ai // i /> ]
     ---------------------------------------- :: StgConApp
-    ccs, G : K </ ai // i />  >- { ccs |-> alloc K } ->  D : x, ccs
+    ccs, G : K </ ai // i />  >- { ccs |-> alloc K } ->  G [ x |- ccs -> K </ ai // i /> ] : x, ccs
 
-    D' = D [ x |-> Kk ccs0 </ ai // i /> ]
     altj = Kk </ xi // i /> -> e'
-    ccs, G : e >- t -> D' : x, ccs0'
-    ccs, D' : e' </ [ ai / xi ] // i /> >- t' -> T : y, ccs'
+    ccs, G : e >- t -> D [ x |- _ -> Kk </ ai // i /> ] : x, ccs'
+    ccs, D [ x |- _ -> Kk </ ai // i /> ] : e' </ [ ai / xi ] // i /> >- t' -> T : y, ccs''
     --------------------------------------------------------------- :: StgCase
-    ccs, G : case e as x of </ altj // j /> >- t <> t' -> T : y, ccs'
+    ccs, G : case e as x of </ altj // j /> >- t <> t' -> T : y, ccs''
+
+    ccs, G [ y |- ccs -> cl ] : e [ x / y ] >- t -> D : z, ccs'
+    ------------------------------------------------------------ :: StgLetClosure
+    ccs, G : let x = cl in e  >- { ccs |-> alloc cl } <> t ->  D : z, ccs'
+
+    ccs, G [ y |- ccs -> K </ ai // i /> ] : e [ x / y ] >- t -> D : z, ccs'
+    ------------------------------------------------------------ :: StgLetCon
+    ccs, G : let x = K CCCS </ ai // i /> in e  >- { ccs |-> alloc K } <> t ->  D : z, ccs'
+
+    ccs, G : e >- t -> D : { f </ ai // i /> } , ccs'
+    ccs, D : e' </ [ ai / xi ] // i /> >- t' -> T : z, ccs''
+    ------------------------------------------------------------ :: StgLneClosure
+    ccs, G : lne f = \ upd _ </ x // i /> . e' in e  >- t <> t' ->  T : z, ccs''
+
+    ccs, G : e >- t -> D : x , ccs'
+    ccs, D : K </ ai // i /> >- t' -> T : z, ccs''
+    --------------------------------------------------------------- :: StgLneCon
+    ccs, G : lne x = K _ </ ai // i /> in e  >- t <> t' ->  T : z, ccs''
+
+    ccs # cc, G : e >- t -> D : z, ccs'
+    --------------------------------------- :: StgSCC
+    ccs, G : scc cc e >- t -> D : z, ccs'

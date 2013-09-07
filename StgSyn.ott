@@ -37,6 +37,11 @@ cc {{ tex \textsf{cc} }} :: 'CostCentre_' ::=
   {{ com Cost-centre, \coderef{profiling/CostCentre.lhs}{CostCentre} }}
 
 ccs {{ tex \textsf{ccs} }} :: 'CostCentreStack_' ::=
+  | CCCS :: :: CurrentCCS {{ com Current cost-centre stack }}
+    {{ tex \bullet }}
+  | _    :: :: DontCareCCS {{ com Don't care cost-centre stack }}
+  | ccs ^ ccs' :: :: EnterFunCCS {{ com Function entry }}
+  | ccs # cc   :: :: PushCC {{ com Push a cost-centre }}
   {{ com Cost-centre stack, \coderef{profiling/CostCentre.lhs}{CostCentreStack} }}
 
 a, b, c :: 'StgArg_' ::= {{ com Arguments, \coderef{stgSyn/StgSyn.lhs}{StgArg} }}
@@ -52,6 +57,7 @@ args :: 'StgArgs_' ::= {{ com List of arguments }}
 xs :: 'Ids_' ::= {{ com List of variables }}
   | </ xi // , // i /> :: :: List
   | nil :: :: EmptyList
+  | xs xs' :: :: Append
 
 e :: 'StgExpr_' ::= {{ com Expressions, \coderef{stgSyn/StgSyn.lhs}{StgExpr} }}
   | lit                                  ::   :: StgLit {{ com Literal }}
@@ -77,9 +83,13 @@ upd :: 'UpdateFlag_' ::= {{ com Update flag, \coderef{stgSyn/StgSyn.lhs}{UpdateF
   | r :: :: ReEntrant {{ com Function (re-entrant closure) }}
   | u :: :: Updatable {{ com Thunk (updatable closure) }}
 
+cl :: 'StgRhsClosure_' ::= {{ com StgRhsClosure }}
+  | \ upd ccs xs . e  :: :: StgRhsClosure
+
 rhs :: 'StgRhs_' ::= {{ com Right-hand sides, \coderef{stgSyn/StgSyn.lhs}{StgRhs} }}
-  | \ upd ccs xs . e  :: :: StgRhsClosure {{ com Closure }}
+  | cl                :: :: StgRhsClosure {{ com Closure }}
   | K ccs args        :: :: StgRhsCon {{ com Constructor }}
+  | x                 :: :: StgRhsIndirection {{ com Indirection (runtime only) }}
 
 alt :: 'StgAlt_' ::= {{ com Case alternative, \coderef{stgSyn/StgSyn.lhs}{StgAlt} }}
   | K </ xi // i /> -> e    ::   :: StgAlt  {{ com Constructor applied to fresh names }}
@@ -90,3 +100,6 @@ terminals :: 'terminals_' ::=
   | |->                 ::   :: mapsto     {{ tex \mapsto }}
   | <>                  ::   :: union      {{ tex \mathbin{\mathaccent\cdot\cup} }}
   | nil                 ::   :: empty      {{ tex \cdot }}
+  | /=                  ::   :: neq        {{ tex \neq }}
+  | ^                   ::   :: enterFun   {{ tex \bowtie }}
+  | #                   ::   :: push       {{ tex \triangleright }}

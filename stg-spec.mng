@@ -27,17 +27,21 @@
 \begin{center}
 \LARGE
 The Spineless Tagless G-machine, as implemented in GHC.\\
-\Large 6 September, 2013
+\Large 7 September, 2013
 \end{center}
 
 \section{Introduction}
 
 This document presents the syntax of STG, and the cost semantics utilized
-for profiling.
+for profiling.  While this document will be primarily useful for people
+looking to work profiling in GHC, the hope is that this will eventually
+expanded to also have operational semantics for modern STG.
 
-There are some details elided from this presentation, especially extra
-annotated data which is useful for code generation but not strictly
-necessary.
+While care has been taken to adhere to the behavior in GHC, these rules
+have not yet been used to perform any proofs.  There are some details
+elided from this presentation, especially extra annotated data in the
+STG data type itself which is useful for code generation but not
+strictly necessary.
 
 \section{Grammar}
 
@@ -49,9 +53,13 @@ We will use the following metavariables:
 
 \subsection{Preliminaries}
 
-Literals and primitive ops:
+Literals do not play a big role, so they are kept abstract:
 
 \gram{\ottlit}
+
+Primitive operations and foreign calls can influence the costs of
+an application, but because their behavior depends on the specific
+operation in question, they are kept abstract for simplicity's sake.
 
 \gram{\ottop}
 
