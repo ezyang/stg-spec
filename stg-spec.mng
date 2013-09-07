@@ -22,13 +22,11 @@
 
 \newcommand{\gram}[1]{\ottgrammartabular{#1\ottafterlastrule}}
 
+\title{The Spineless Tagless G-Machine, as implemented by GHC}
+
 \begin{document}
 
-\begin{center}
-\LARGE
-The Spineless Tagless G-machine, as implemented in GHC.\\
-\Large 7 September, 2013
-\end{center}
+\maketitle
 
 \section{Introduction}
 
@@ -38,10 +36,11 @@ looking to work on profiling in GHC, the hope is that this will eventually
 expanded to also have operational semantics for modern STG.
 
 While care has been taken to adhere to the behavior in GHC, these rules
-have not yet been used to perform any proofs.  There are some details
-elided from this presentation, especially extra annotated data in the
-STG data type itself which is useful for code generation but not
-strictly necessary.
+have not yet been used to perform any proofs.  There is some sloppiness
+in here that probably would have to be cleaned up, especially with
+respect to let-no-escape.  Some details are elided from this
+presentation, especially extra annotated data in the STG data type
+itself which is useful for code generation but not strictly necessary.
 
 \section{Grammar}
 
