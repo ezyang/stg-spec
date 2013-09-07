@@ -1,0 +1,102 @@
+\documentclass{article}
+
+\usepackage{supertabular}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\usepackage{xcolor}
+\usepackage{fullpage}
+\usepackage{multirow}
+\usepackage{url}
+
+\newcommand{\ghcfile}[1]{\textsl{#1}}
+\newcommand{\arraylabel}[1]{\multicolumn{2}{l}{\!\!\!\!\!\!\!\!\!\text{\underline{#1}:}}}
+
+\input{StgOtt}
+
+% increase spacing between rules for ease of reading:
+\renewcommand{\ottusedrule}[1]{\[#1\]\\[1ex]}
+
+\setlength{\parindent}{0in}
+\setlength{\parskip}{1ex}
+
+\newcommand{\gram}[1]{\ottgrammartabular{#1\ottafterlastrule}}
+
+\begin{document}
+
+\begin{center}
+\LARGE
+The Spineless Tagless G-machine, as implemented in GHC.\\
+\Large 6 September, 2013
+\end{center}
+
+\section{Introduction}
+
+This document presents the syntax of STG, and the cost semantics utilized
+for profiling.
+
+There are some details elided from this presentation, especially extra
+annotated data which is useful for code generation but not strictly
+necessary.
+
+\section{Grammar}
+
+\subsection{Metavariables}
+
+We will use the following metavariables:
+
+\ottmetavars{}\\
+
+\subsection{Preliminaries}
+
+Literals and primitive ops:
+
+\gram{\ottlit}
+
+\gram{\ottop}
+
+Cost-centres for profiling:
+
+\gram{\ottcc}
+
+\gram{\ottccs}
+
+Arguments in STG are restricted to be literals or variables:
+
+\gram{\ottarg}
+
+\subsection{Expressions}
+
+The datatype that represents expressions:
+
+\gram{\otte}
+
+Bindings for let statements:
+
+\gram{\ottbinding}
+
+Valid right-hand-sides of bindings:
+
+\gram{\ottrhs}
+
+Update flags for closures:
+
+\gram{\ottupd}
+
+Case alternatives:
+
+\gram{\ottalt}
+
+\section{Cost semantics}
+
+\ottdefncost{}
+
+Note the implementations of StgApp are splattered across two
+different calling conventions for functions: slow calls and
+direct calls.  Direct calls handle saturated and over-applied
+cases (\coderef{codeGen/StgCmmLayout.hs}{slowArgs}), while slow
+calls handle all cases (\textit{utils/genapply/GenApply.hs});
+in particular, these cases ensure that the current cost-center
+reverts to the one originally at the call site.
+
+\end{document}

@@ -1,0 +1,83 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Cost semantics  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+grammar
+
+c :: 'c_' ::=
+  | alloc K :: :: Allocate
+
+t {{ tex \theta }} :: 't_' ::=
+  | {} :: :: empty
+  | { ccs |-> c } :: :: inject
+  | t <> t' :: :: append
+
+G {{ tex \Gamma }}, D {{ tex \Delta }}, T {{ tex \Theta }} :: 'G_' ::=
+  | empty :: :: em
+  | G , Gp :: :: vn
+
+Gp :: 'Gp_' ::=
+  | x |-> rhs :: :: prod
+
+formula :: 'formula_' ::=
+  | judgement :: :: judgement
+  % all the random extra stuff we didn't want to gunk up the inductive
+  % types with...
+  | x |-> rhs in G :: :: Gin
+  | G' = G [ </ Gpi // , // i IN 1 .. n /> ] :: :: Gsplit
+  | ccs' = enterFunCCS ccs ccs0 :: :: Gccs
+
+z :: 'z_' ::=
+  | \ upd ccs xs . e    :: :: StgRhsClosureReentrant {{ com Restricted to re-entrant closures }}
+  | K ccs args        :: :: StgRhsCon
+
+subrules
+  z <:: rhs
+
+defns
+
+Jcost :: '' ::=
+
+defn
+    ccs , G : e  >- t ->  D : arg , ccs' :: :: cost :: ''
+        {{tex [[ccs]] [[,]] [[G]] [[:]] [[e]]\ \Downarrow_{[[t]]}\ [[D]] [[:]] [[arg]] [[,]] [[ccs']] }}
+        by
+
+    --------------------------------------- :: StgLit
+    ccs, G : lit  >-{}->  G : lit, ccs
+
+    G' = G [ x |-> z ]
+    --------------------------------------- :: StgAppWhnf
+    ccs, G' : x []  >-t->  G' : x, ccs
+
+    ccs0, G' : e  >-t->  D' : y, ccs'
+    G' = G [ x |-> \ u ccs0 [] . e ]
+    D' = D [ x |-> \ r ccs0 [] . y [] ]
+    --------------------------------------- :: StgAppThunk
+    ccs, G' : x []  >-t->  D' : y, ccs'
+
+    D = G [ x |-> \ r ccs0 xs1 . f args0 xs1 ]
+    --------------------------------------- :: StgAppFunUnder
+    ccs, G : f args0 >- {} -> D : x, ccs
+    % NB: PAPs not charged!
+
+    ccs1, G' : e >-t-> D : x, ccs'
+    ccs1 = enterFunCCS ccs ccs0
+    G' = G [ f |-> \ r ccs0 xs . e ]
+    --------------------------------------- :: StgAppFunSat
+    ccs, G' : f args >-t->  D : x, ccs'
+
+    ccs, G : f args0 >-t-> D : f', ccs0
+    ccs, D : f' args1 >-t'-> T : x, ccs'
+    ---------------------------------------- :: StgAppFunOver
+    ccs, G : f args >-t <> t'->  T : x, ccs'
+
+    D = G [ x |-> K ccs args ]
+    ---------------------------------------- :: StgConApp
+    ccs, G : K args  >- { ccs |-> alloc K } ->  D : x, ccs
+
+    ccs, D' : ek[]
+    ccs, G : e >- t -> D' : x, ccs0
+    --------------------------------------------------------------- :: StgCase
+    ccs, G : case e as x of </ alti // | // i /> >- t <> t' -> T : z, ccs'
