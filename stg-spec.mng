@@ -171,8 +171,7 @@ direct calls.  Direct calls handle saturated and over-applied
 cases (\coderef{codeGen/StgCmmLayout.hs}{slowArgs}), while slow
 calls handle all cases (\textit{utils/genapply/GenApply.hs});
 in particular, these cases ensure that the current cost-center
-reverts to the one originally at the call site.  The lack of
-an allocation record for the PAP is a bug.
+reverts to the one originally at the call site.
 \item The \textsc{App} rule demonstrates that modern GHC
 profiling uses neither evaluation scoping or lexical scoping; rather,
 it uses a hybrid of the two (though with an appropriate definition

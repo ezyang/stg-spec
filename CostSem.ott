@@ -13,6 +13,7 @@ heap :: 'Heap_' ::= {{ com Values on the heap }}
 cost :: 'cost_' ::=
   | alloc K :: :: AllocateCon
   | alloc cl :: :: AllocateClosure
+  | alloc PAP :: :: AllocatePAP
 
 t {{ tex \theta }} :: 't_' ::=
   | {} :: :: empty
@@ -69,7 +70,7 @@ defn
     f |- ccs0 -> \ r ccs1 </ yi // i /> </ xj // j /> . e in G
     z fresh
     --------------------------------------- :: AppUnder
-    ccs, G : f </ ai // i /> >- {} -> G [ z |- ccs -> \ r _ </ xj // j /> . f </ ai // i /> </ xj // j /> ] : z, ccs
+    ccs, G : f </ ai // i /> >- { ccs |-> alloc PAP } -> G [ z |- ccs -> \ r _ </ xj // j /> . f </ ai // i /> </ xj // j /> ] : z, ccs
     % NB: PAPs not charged!
 
     ccs ^ ccs0, G : e >-t-> D : z, ccs'
